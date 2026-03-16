@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import AuthCard from './AuthCard';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import AuthCard from '../../components/auth/AuthCard';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +30,7 @@ const LoginPage = () => {
       title="Welcome Back"
       subtitle="Sign in to your IELTS Tracker account"
       footerText="Don't have an account?"
-      footerLink="/signup"
+      footerLink="/auth/signup"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input

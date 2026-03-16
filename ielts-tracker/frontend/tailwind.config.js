@@ -93,30 +93,6 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    function ({ addBase, addComponents, theme }) {
-      addBase({
-        'body': {
-          @apply: 'bg-background text-text-primary',
-        },
-      });
-
-      addComponents({
-        '.glass': {
-          @apply: 'bg-white/5 backdrop-blur-xl border border-white/10',
-        },
-        '.glass-dark': {
-          @apply: 'bg-black/20 backdrop-blur-xl border border-white/5',
-        },
-        '.btn-ripple': {
-          position: 'relative',
-          overflow: 'hidden',
-        },
-        '.input-glow': {
-          @apply: 'focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background',
-        },
-      });
-    },
-  ],
+  plugins: [],
 }
 

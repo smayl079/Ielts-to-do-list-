@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Layout from '../components/layout/Layout';
-import { Button, Card, Badge, Input, Modal, Toast, Skeleton } from '../components/ui';
+import { Button, Card, Input, Modal, Skeleton } from '../components/ui';
 import MetricCard from '../components/dashboard/MetricCard';
-import Badge as BadgeComponent from '../components/ui/Badge';
+import BadgeComponent from '../components/ui/Badge';
 import { Award, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
 
 const ComponentShowcase = () => {
