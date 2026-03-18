@@ -1,61 +1,60 @@
 const express = require("express");
-const StudyProgress = require("../models/StudyProgress");
-const auth = require("../middleware/auth");
+const { body, param } = require("express-validator");
+const {
+  upsertProgress,
+  getProgressHistory,
+  getProgressStats,
+  deleteProgressEntry,
+} = require("../controllers/progressController");
+const { protect } = require("../middleware/auth");
 
 const router = express.Router();
 
-router.use(auth);
+router.use(protect);
 
-router.post("/add", async (req, res) => {
-  try {
-    const {
-      date,
-      listening = 0,
-      reading = 0,
-      writing = 0,
-      speaking_minutes = 0,
-      vocabulary_count = 0,
-    } = req.body;
+const progressValidators = [
+  body("date").optional().isISO8601().withMessage("Date must be a valid ISO date"),
+  body("listening")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Listening value must be at least 0"),
+  body("reading")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Reading value must be at least 0"),
+  body("writing")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Writing value must be at least 0"),
+  body("speaking_minutes")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Speaking minutes must be at least 0"),
+  body("vocabulary_count")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Vocabulary count must be at least 0"),
+  body("notes")
+    .optional()
+    .isString()
+    .isLength({ max: 500 })
+    .withMessage("Notes must be at most 500 characters"),
+];
 
-    const safeValues = {
-      listening: Math.max(0, Number(listening) || 0),
-      reading: Math.max(0, Number(reading) || 0),
-      writing: Math.max(0, Number(writing) || 0),
-      speaking_minutes: Math.max(0, Number(speaking_minutes) || 0),
-      vocabulary_count: Math.max(0, Number(vocabulary_count) || 0),
-    };
+router.post("/", progressValidators, upsertProgress);
+router.put("/", progressValidators, upsertProgress);
 
-    const progressDate = new Date(date || Date.now());
-    progressDate.setHours(0, 0, 0, 0);
+// Backward-compatible aliases
+router.post("/add", progressValidators, upsertProgress);
+router.get("/history", getProgressHistory);
 
-    const progress = await StudyProgress.findOneAndUpdate(
-      { user_id: req.user.id, date: progressDate },
-      {
-        user_id: req.user.id,
-        date: progressDate,
-        ...safeValues,
-      },
-      {
-        upsert: true,
-        new: true,
-        runValidators: true,
-        setDefaultsOnInsert: true,
-      }
-    );
+router.get("/", getProgressHistory);
+router.get("/stats", getProgressStats);
 
-    return res.status(201).json(progress);
-  } catch (error) {
-    return res.status(500).json({ message: error.message || "Failed to save progress" });
-  }
-});
-
-router.get("/history", async (req, res) => {
-  try {
-    const history = await StudyProgress.find({ user_id: req.user.id }).sort({ date: 1 });
-    return res.json(history);
-  } catch (error) {
-    return res.status(500).json({ message: error.message || "Failed to fetch history" });
-  }
-});
+router.delete(
+  "/:id",
+  [param("id").isMongoId().withMessage("Invalid progress entry id")],
+  deleteProgressEntry
+);
 
 module.exports = router;

@@ -19,17 +19,28 @@ const vocabularySchema = new mongoose.Schema({
   },
   example_sentence: {
     type: String,
-    required: true,
+    default: "",
     trim: true,
   },
   synonyms: {
     type: [String],
     default: [],
   },
+  difficulty: {
+    type: String,
+    enum: ["easy", "medium", "hard"],
+    default: "medium",
+  },
+  learned: {
+    type: Boolean,
+    default: false,
+  },
   created_at: {
     type: Date,
     default: Date.now,
   },
 });
+
+vocabularySchema.index({ user_id: 1, word: 1 });
 
 module.exports = mongoose.model("Vocabulary", vocabularySchema);

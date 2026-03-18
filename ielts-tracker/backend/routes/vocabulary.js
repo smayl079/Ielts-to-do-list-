@@ -1,104 +1,61 @@
 const express = require("express");
-const Vocabulary = require("../models/Vocabulary");
-const auth = require("../middleware/auth");
+const { body, param } = require("express-validator");
+const {
+  createVocabularyEntry,
+  getVocabularyEntries,
+  updateVocabularyEntry,
+  deleteVocabularyEntry,
+} = require("../controllers/vocabularyController");
+const { protect } = require("../middleware/auth");
 
 const router = express.Router();
 
-router.use(auth);
+router.use(protect);
 
-function normalizeSynonyms(input) {
-  if (Array.isArray(input)) {
-    return input.map((item) => String(item).trim()).filter(Boolean);
-  }
+const createValidators = [
+  body("word").trim().notEmpty().withMessage("Word is required"),
+  body("meaning").trim().notEmpty().withMessage("Meaning is required"),
+  body("example_sentence")
+    .optional()
+    .isString()
+    .withMessage("Example sentence must be text"),
+  body("synonyms")
+    .optional()
+    .custom((value) => Array.isArray(value) || typeof value === "string")
+    .withMessage("Synonyms must be an array or comma-separated string"),
+  body("difficulty")
+    .optional()
+    .isIn(["easy", "medium", "hard"])
+    .withMessage("Difficulty must be easy, medium, or hard"),
+  body("learned").optional().isBoolean().withMessage("Learned must be true or false"),
+];
 
-  if (typeof input === "string") {
-    return input
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
+const updateValidators = [
+  param("id").isMongoId().withMessage("Invalid vocabulary id"),
+  body("word").optional().trim().notEmpty().withMessage("Word cannot be empty"),
+  body("meaning").optional().trim().notEmpty().withMessage("Meaning cannot be empty"),
+  body("example_sentence")
+    .optional()
+    .isString()
+    .withMessage("Example sentence must be text"),
+  body("synonyms")
+    .optional()
+    .custom((value) => Array.isArray(value) || typeof value === "string")
+    .withMessage("Synonyms must be an array or comma-separated string"),
+  body("difficulty")
+    .optional()
+    .isIn(["easy", "medium", "hard"])
+    .withMessage("Difficulty must be easy, medium, or hard"),
+  body("learned").optional().isBoolean().withMessage("Learned must be true or false"),
+];
 
-  return [];
-}
+router.post("/", createValidators, createVocabularyEntry);
 
-router.post("/add", async (req, res) => {
-  try {
-    const { word, meaning, example_sentence, synonyms } = req.body;
+// Backward-compatible alias
+router.post("/add", createValidators, createVocabularyEntry);
 
-    if (!word || !meaning || !example_sentence) {
-      return res.status(400).json({ message: "Word, meaning, and example sentence are required" });
-    }
-
-    const vocab = await Vocabulary.create({
-      user_id: req.user.id,
-      word,
-      meaning,
-      example_sentence,
-      synonyms: normalizeSynonyms(synonyms),
-    });
-
-    return res.status(201).json(vocab);
-  } catch (error) {
-    return res.status(500).json({ message: error.message || "Failed to add vocabulary" });
-  }
-});
-
-router.get("/", async (req, res) => {
-  try {
-    const { q } = req.query;
-    const filter = { user_id: req.user.id };
-
-    if (q) {
-      filter.$or = [
-        { word: { $regex: q, $options: "i" } },
-        { meaning: { $regex: q, $options: "i" } },
-      ];
-    }
-
-    const words = await Vocabulary.find(filter).sort({ created_at: -1 });
-    return res.json(words);
-  } catch (error) {
-    return res.status(500).json({ message: error.message || "Failed to fetch vocabulary" });
-  }
-});
-
-router.put("/:id", async (req, res) => {
-  try {
-    const { word, meaning, example_sentence, synonyms } = req.body;
-
-    const updated = await Vocabulary.findOneAndUpdate(
-      { _id: req.params.id, user_id: req.user.id },
-      {
-        ...(word !== undefined ? { word } : {}),
-        ...(meaning !== undefined ? { meaning } : {}),
-        ...(example_sentence !== undefined ? { example_sentence } : {}),
-        ...(synonyms !== undefined ? { synonyms: normalizeSynonyms(synonyms) } : {}),
-      },
-      { new: true, runValidators: true }
-    );
-
-    if (!updated) {
-      return res.status(404).json({ message: "Vocabulary not found" });
-    }
-
-    return res.json(updated);
-  } catch (error) {
-    return res.status(500).json({ message: error.message || "Failed to update vocabulary" });
-  }
-});
-
-router.delete("/:id", async (req, res) => {
-  try {
-    const removed = await Vocabulary.findOneAndDelete({ _id: req.params.id, user_id: req.user.id });
-
-    if (!removed) {
-      return res.status(404).json({ message: "Vocabulary not found" });
-    }
-
-    return res.json({ message: "Vocabulary deleted" });
-  } catch (error) {
-    return res.status(500).json({ message: error.message || "Failed to delete vocabulary" });
-  }
-});
+router.get("/", getVocabularyEntries);
+router.put("/:id", updateValidators, updateVocabularyEntry);
+router.delete("/:id", [param("id").isMongoId().withMessage("Invalid vocabulary id")], deleteVocabularyEntry);
 
 module.exports = router;

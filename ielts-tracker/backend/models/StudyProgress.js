@@ -44,8 +44,19 @@ const studyProgressSchema = new mongoose.Schema({
     default: 0,
     min: 0,
   },
+  notes: {
+    type: String,
+    trim: true,
+    maxlength: 500,
+    default: "",
+  },
+  created_at: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
+studyProgressSchema.index({ user_id: 1, date: -1 });
 studyProgressSchema.index({ user_id: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model("StudyProgress", studyProgressSchema);
