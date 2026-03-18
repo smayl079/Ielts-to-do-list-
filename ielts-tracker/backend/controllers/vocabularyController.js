@@ -111,14 +111,14 @@ const updateVocabularyEntry = async (req, res, next) => {
 
     const { word, meaning, example_sentence, synonyms, difficulty, learned } = req.body;
 
-    const payload = {
-      ...(word !== undefined ? { word } : {}),
-      ...(meaning !== undefined ? { meaning } : {}),
-      ...(example_sentence !== undefined ? { example_sentence } : {}),
-      ...(synonyms !== undefined ? { synonyms: toStringArray(synonyms) } : {}),
-      ...(difficulty !== undefined ? { difficulty } : {}),
-      ...(learned !== undefined ? { learned: Boolean(learned) } : {}),
-    };
+    const payload = {};
+
+    if (word !== undefined) payload.word = word;
+    if (meaning !== undefined) payload.meaning = meaning;
+    if (example_sentence !== undefined) payload.example_sentence = example_sentence;
+    if (synonyms !== undefined) payload.synonyms = toStringArray(synonyms);
+    if (difficulty !== undefined) payload.difficulty = difficulty;
+    if (learned !== undefined) payload.learned = Boolean(learned);
 
     const entry = await Vocabulary.findOneAndUpdate(
       {
